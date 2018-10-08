@@ -5,9 +5,9 @@
 // ======================================================================
 // Strategy:
 // ======================================================================
-// A network SIR experiment based on a priority queue of events. 
+// A network SIR experiment based on a priority queue of events.
 // Header for event_driven class
-// 
+//
 
 #include <string>
 #include <sstream>
@@ -32,7 +32,7 @@
 
 class EVENT_DRIVEN{
     // type: class
-    // definition: Creates an event driven SIR experiment. 
+    // definition: Creates an event driven SIR experiment.
     // methods:
     //      copyGraph: stores a copy of the unmodified network
     //
@@ -48,35 +48,38 @@ class EVENT_DRIVEN{
     //
     //      call_event: grabs the next event in the queue and calls it
     //
-private:
+    private:
+    
+    using EFFECT = void(EVENT_DRIVEN::*)(unsigned int);
+    
     struct EVENT {
         // type: event struct
         // definition: creates an event object
-
-        double time;                        // time of event
-        std::string name;                   // name of event
-        unsigned int location;              // event location (node ID)
-        EVENT( double time, std::string name, unsigned int location) : time(time), name(name), location(location) {}
+        
+        double time;                            // time of event
+        EFFECT effect;                     // effect of event
+        unsigned int location;                  // event location (node ID)
+        EVENT( double time, EFFECT effect, unsigned int location) : time(time), effect(effect), location(location) {}
     };
-
+    
     struct COMPARISON {
         // type: comparison struct
-        // definition: auxillary struct for priority queue. Compares 
-        // two event times and returns true if the left hand 
-        // side is after the right hand side. Using greater than `>` 
+        // definition: auxillary struct for priority queue. Compares
+        // two event times and returns true if the left hand
+        // side is after the right hand side. Using greater than `>`
         // gives the queue a `lowest first` ordering.
-
+        
         bool operator() (const EVENT& l, const EVENT& r) const {
             return (l.time > r.time);
         }
     };
-
+    
     typedef std::vector<EVENT> EVENTS;  // type: list of events
-
-public:
+    
+    public:
     double beta, gamma;                 // model parameters
-    GRAPH::NODES nodes, _nodes;         // network nodes 
-    bool propensity;                    
+    GRAPH::NODES nodes, _nodes;         // network nodes
+    bool propensity;
     std::priority_queue < EVENT, EVENTS, COMPARISON > queue;
     int I,R;
     unsigned int root;                  // root of infection tree
@@ -84,21 +87,21 @@ public:
     unsigned int r3;
     double tau_t, tau_r;                // declare time interval(s)
     double t;                           // start time
-                                        
+    
     EVENT_DRIVEN(GRAPH::NODES nodes) : nodes(nodes) {}
-
+    
     void copyGraph(GRAPH::NODES nodes);
     
     void _do(std::map<std::string,double> params);
-
+    
     void setup(std::map<std::string,double> params);
-
+    
     void teardown();
-
+    
     void infect(unsigned int ID);
-
+    
     void recover(unsigned int ID);
-
+    
     void call_event();
 };
 
@@ -155,7 +158,6 @@ void EVENT_DRIVEN::infect(unsigned int ID){
     // its contact events and recovery events are posted to the priority queue. If
     // the neighbours are not susceptible, these contacts do not lead to further action.
     
-    
     r3 = random_integer(1, nodes[ID].EDGES.size());
     GRAPH::EDGES::const_iterator it = nodes[ID].EDGES.begin();
     std::advance(it, r3-1);             // without -1 can sometimes break
@@ -172,11 +174,11 @@ void EVENT_DRIVEN::infect(unsigned int ID){
         // while transmission time < recovery time
         while ( tau_t < tau_r ){
             // post contacts.
-            queue.push( EVENT(tau_t, "infection", nodes[it->j].ID));
+            queue.push( EVENT(tau_t, &EVENT_DRIVEN::infect, nodes[it->j].ID));
             tau_t += -log((double)r1/INT_MAX) / beta;
         }
         // post recovery event
-        queue.push( EVENT(tau_r, "recovery", nodes[it->j].ID));
+        queue.push( EVENT(tau_r, &EVENT_DRIVEN::recover, nodes[it->j].ID));
     }
 }
 
@@ -198,21 +200,20 @@ void EVENT_DRIVEN::call_event(){
         propensity = false;
     }
     else{
-        EVENT e = queue.top();      // grab the next event
-        t += e.time;                // increment the time
+        // grab the next event
+        EVENT e = queue.top();
+        
+        // increment the time
+        t += e.time;
         
         // play it out
-        if(e.name == "infection"){
-            infect(e.location);
-        }
-        if(e.name == "recovery"){
-            recover(e.location);
-        }
+        (this->*e.EVENT_DRIVEN::EVENT::effect)(e.location);
+        
+        // pop the event
         queue.pop();
     }
 }
 
 
 #endif
-
 
