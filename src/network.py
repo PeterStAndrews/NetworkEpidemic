@@ -1,6 +1,6 @@
 # (c) Peter Mann (2018) [University of St Andrews].
 #
-#	Generates a networkx graph and outputs the formatted data to a txt file
+# Generates a networkx graph and outputs the formatted data to a txt file
 # that can be read by the c++ program. This should be run in python 2.7.
 # The resulting file has the following format:
 # line number = node ID
