@@ -57,7 +57,7 @@ class EVENT_DRIVEN{
         // definition: creates an event object
         
         double time;                            // time of event
-        EFFECT effect;                     // effect of event
+        EFFECT effect;                          // effect of event
         unsigned int location;                  // event location (node ID)
         EVENT( double time, EFFECT effect, unsigned int location) : time(time), effect(effect), location(location) {}
     };
@@ -82,9 +82,8 @@ class EVENT_DRIVEN{
     bool propensity;
     std::priority_queue < EVENT, EVENTS, COMPARISON > queue;
     int I,R;
-    unsigned int root;                  // root of infection tree
-    double r1, r2;                      // declare random numbers
-    unsigned int r3;
+    unsigned int root,r2;               // root of infection tree
+    double r1;                          // declare random doubles
     double tau_t, tau_r;                // declare time interval(s)
     double t;                           // start time
     
@@ -120,7 +119,7 @@ void EVENT_DRIVEN::_do(std::map<std::string,double> params){
     // type: function
     // definition: runs the experiment with setup and teardown methods
     setup(params);
-    while(propensity and I != 0){
+    while(propensity){
         call_event();
     }
     teardown();
@@ -131,21 +130,24 @@ void EVENT_DRIVEN::setup(std::map<std::string,double> params){
     // definition: setup method for each run of the experiment
     beta = params["beta"];
     gamma = params["gamma"];
-    nodes = _nodes;                // something going one with this line
+    queue = std::priority_queue < EVENT, EVENTS, COMPARISON >();
+    nodes = _nodes;                // something going one with this line, sometimes ...
     propensity = true;
-    I = 0;
     R = 0;
     t = 0.0;
     // select index(s) for root of infected tree (if multiple: pick unique)
-    unsigned int root = random_integer(1,nodes.size());
-    nodes[root].STATUS = 0;
+    root = random_integer(1, static_cast<unsigned int>(nodes.size()));
     infect(nodes[root].ID);
-    ++I;
 }
 
 void EVENT_DRIVEN::teardown(){
     // type: function
     // definition: reports the outcome of the experiment, parameters and metadata
+    for(GRAPH::NODES::const_iterator it = nodes.begin(); it != nodes.end(); ++it){
+        if((*it).STATUS > 0){
+            ++R;
+        }
+    }
     double epidemic = (double) R / (double) nodes.size();
     std::cout << beta << " " << epidemic  << "\n";
 }
@@ -153,32 +155,41 @@ void EVENT_DRIVEN::teardown(){
 
 void EVENT_DRIVEN::infect(unsigned int ID){
     // type: function
-    // definition: performs an infection event at e.location. An edge is
-    // selected from the neighbour list. If the neighbour is susceptible, it becomes infected and
-    // its contact events and recovery events are posted to the priority queue. If
-    // the neighbours are not susceptible, these contacts do not lead to further action.
+    // definition: performs an infection event at e.location.
     
-    r3 = random_integer(1, nodes[ID].EDGES.size());
-    GRAPH::EDGES::const_iterator it = nodes[ID].EDGES.begin();
-    std::advance(it, r3-1);             // without -1 can sometimes break
+    // if the focal node is susceptible
+    if(nodes[ID].STATUS < 0){
+        
+        // sample infectious time interval until recovery
+        r1 = random_double(0,1);
+        tau_r = t - log((double)r1) / gamma;
     
-    if(nodes[it->j].STATUS < 0){
-        ++I;                            // infect the neighbour
-        nodes[it->j].STATUS = 0;
+        // infect the focal node
+        nodes[ID].STATUS = 0;
         
-        r1 = random_double(0,1);        // sample time interval until transmission/recovery
-        r2 = random_double(0,1);
-        tau_t = -log((double)r1/INT_MAX) / beta;
-        tau_r = -log((double)r2/INT_MAX) / gamma;
+        // post recovery event of focal node
+        queue.push( EVENT(tau_r, &EVENT_DRIVEN::recover, nodes[ID].ID));
         
-        // while transmission time < recovery time
-        while ( tau_t < tau_r ){
-            // post contacts.
-            queue.push( EVENT(tau_t, &EVENT_DRIVEN::infect, nodes[it->j].ID));
-            tau_t += -log((double)r1/INT_MAX) / beta;
+        // iterate over focal nodes neighbours
+        for (GRAPH::EDGES::const_iterator it = nodes[ID].EDGES.begin(); it != nodes[ID].EDGES.end(); ++it){
+            
+            // if neighbour is susceptible
+            if(nodes[it->j].STATUS < 0){
+                
+                // create its predicted infection time
+                r1 = random_double(0,1);
+                tau_t = t - log((double)r1) / beta;
+                
+                // if the infection time is before the focal node recoveres
+                // and if the infection time is less than the neighbours predicted infection time
+                if(tau_t < tau_r && tau_t < nodes[it->j].pINFECTION_TIME){
+                    
+                    // create the infection event for the neighbour
+                    queue.push( EVENT(tau_t, &EVENT_DRIVEN::infect, nodes[it->j].ID));
+                    nodes[it->j].pINFECTION_TIME = tau_t;
+                }
+            }
         }
-        // post recovery event
-        queue.push( EVENT(tau_r, &EVENT_DRIVEN::recover, nodes[it->j].ID));
     }
 }
 
@@ -187,8 +198,6 @@ void EVENT_DRIVEN::recover(unsigned int ID){
     // definition: performs a recovery event at e.location and increments
     // the state counters.
     nodes[ID].STATUS = 1;
-    ++R;
-    --I;
 }
 
 void EVENT_DRIVEN::call_event(){
@@ -197,6 +206,7 @@ void EVENT_DRIVEN::call_event(){
     // and increments the time. It then decides what the event is and plays
     // it out. The event is then removed from the top of the queue.
     if (queue.empty()){
+        
         propensity = false;
     }
     else{
@@ -209,11 +219,11 @@ void EVENT_DRIVEN::call_event(){
         // play it out
         (this->*e.EVENT_DRIVEN::EVENT::effect)(e.location);
         
+        
         // pop the event
         queue.pop();
     }
 }
-
 
 #endif
 
