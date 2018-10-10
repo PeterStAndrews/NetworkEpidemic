@@ -9,7 +9,8 @@
 # To-Do: use JSON rather than txt file. 
 
 
-import networkx 
+import networkx
+from sh import cd
 
 # create the network
 N = 1000                                # number of nodes in the network
@@ -21,14 +22,19 @@ g = networkx.erdos_renyi_graph(N, phi)
 g = g.subgraph(max(networkx.connected_components(g), key = len)).copy()
 g.remove_edges_from(list(g.selfloop_edges()))
 
-# output data to file
-output = open("data.txt", "w")
-for n in g.nodes():                     # for node in graph
-    e = g.neighbors(n)                  # list of neigbhours of node n
-    for k,v in enumerate(e):            # iterate over ns neighbours
-        v = str(v)                      # convert neighbour ID to string
-        output.write(v)                 # print string ID to file
-        if k != len(list(e))-1:         # if the element is not the final neighbour:
-            output.write(" ")           # separate data by single space
-    output.write("\n")                  # print newline for each node
-output.close()                          # close the output file
+# change the current dir to examples
+cd('../examples')
+
+filename = "data.txt"
+
+with open(filename, "w") as output:
+
+    for n in g.nodes():                     # for node in graph
+        e = g.neighbors(n)                  # list of neigbhours of node n
+        for k,v in enumerate(e):            # iterate over ns neighbours
+            v = str(v)                      # convert neighbour ID to string
+            output.write(v)                 # print string ID to file
+            if k != len(list(e))-1:         # if the element is not the final neighbour:
+                output.write(" ")           # separate data by single space
+        output.write("\n")                  # print newline for each node
+    output.close()                          # close the output file
