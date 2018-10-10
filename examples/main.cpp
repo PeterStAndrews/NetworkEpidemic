@@ -9,6 +9,10 @@
 // Strategy:
 // ======================================================================
 // A network SIR experiment based on a priority queue of events.
+//
+// mpic++ -std=c++11 *.cpp
+// mpirun -np 2 ./a.out
+//
 
 #include <string>
 #include <sstream>
@@ -23,6 +27,8 @@
 #include <map>
 #include <queue>
 #include <set>
+
+#include <mpi.h>
 
 #include "event_driven.hpp"
 
@@ -49,14 +55,26 @@ int main ( int argc, char *argv[] ) {
     // Record start time
     auto start = std::chrono::high_resolution_clock::now();
 
-
-    for (unsigned int i = 0; i <= N; ++i){
+         // initialise the MPI 
+     int ierr = MPI_Init(&argc, &argv);
+     int procid, numprocs;
+     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &procid);
+     ierr = MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+     // partition = job over processors. 
+     unsigned int partition = N / numprocs;
+     // if N not divisible by numprocs:
+     if (N % numprocs > 0) {
+         partition++;
+         N = partition * numprocs;
+     }
+    
+    // iterate over partitions on processors
+    for (unsigned int i = procid*partition; i<= partition * (procid + 1); i++){
         params["beta"] = (double) i/N;
         params["gamma"] = 0.1;
-        sim._do(params);
-        
+        sim._do(params);   
     }
-    
+    ierr = MPI_Finalize();
     
     // // Record end time
     auto finish = std::chrono::high_resolution_clock::now();
