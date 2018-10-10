@@ -20,12 +20,7 @@ The default setup will create a `data.txt` file in the `examples` directory that
   mpic++ -std=c++11 *.cpp
   mpirun -np 2 ./a.out
   
-where 2 is the number of cores we have chosen to run the experiment on. This should then create an output file in the examples directory containing the final epidemic size versus the transmissibility of the disease for a trial of 100 points in the parameter space. When plotted, the output should look something like this:
-
-![pdftojpg me-1-3](https://user-images.githubusercontent.com/29250174/46750387-bc949f80-ccaf-11e8-8474-0a5816604a1c.jpg)
-
-up to stochastic fluctuations and zero-sized epidemics.
-
+where 2 is the number of cores we have chosen to run the experiment on. This should then create an output file in the examples directory containing the final epidemic size versus the transmissibility of the disease for a trial of 100 points in the parameter space. 
 
 Implementing your own model
 ------------------------------
