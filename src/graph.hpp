@@ -15,6 +15,7 @@
 #include <vector>
 #include <iterator>
 #include <map>
+#include <limits>
 
 class GRAPH{
 	// class: GRAPH
@@ -49,9 +50,10 @@ public:
     	unsigned int ID;                    // unique node id 
     	std::vector<EDGE> EDGES;            // list of nodes neighbours
     	int STATUS;                         // infection status {-1,0,1}
+        double pINFECTION_TIME;             // predicted infection time
 
     	NODE( unsigned int ID, std::vector<EDGE> EDGES, 
-        	int STATUS) : ID(ID), EDGES(EDGES), STATUS(STATUS) {} 
+        	int STATUS, double pINFECTION_TIME) : ID(ID), EDGES(EDGES), STATUS(STATUS), pINFECTION_TIME(pINFECTION_TIME)  {}
 	};
 
 	typedef std::vector<EDGE> EDGES;        // type: list of edges
@@ -101,7 +103,7 @@ public:
 
     	NODES nodes;                        // instance nodes list to susceptible
     	for (std::vector<int>::size_type n = 0; n != contacts.size(); ++n) {
-        	NODE node{static_cast<unsigned int>(n), contacts[n], -1};
+        	NODE node{static_cast<unsigned int>(n), contacts[n], -1, std::numeric_limits<double>::max()};
         	nodes.push_back(node);
     	}
     	return { nodes, contacts };
