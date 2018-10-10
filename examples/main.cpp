@@ -30,7 +30,7 @@
 
 #include <mpi.h>
 
-#include "event_driven.hpp"
+#include "../src/event_driven.hpp"
 
 // ======================================================================
 // Main:
