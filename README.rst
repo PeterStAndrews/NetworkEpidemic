@@ -1,7 +1,7 @@
 NetworkEpidemic
 ==================
 
-Stochastic simulation of epidemics based on priority queue event-based algorithm in C++. 
+Stochastic simulation of epidemics on complex networks based on priority queue event-based algorithm in C++. 
 
 
 Installation & Usage
