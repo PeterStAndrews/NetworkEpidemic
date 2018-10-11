@@ -50,6 +50,10 @@ int main ( int argc, char *argv[] ) {
     EVENT_DRIVEN sim(nodes);                     // create simulation object
     sim.copyGraph(nodes);                        // create network copy.
     
+    std::map<std::string, double> res;		     // create results map for single run
+                                                 // vector for single run results
+    std::vector<std::map<std::string, double>> _res;
+    
     unsigned int N = 100;                		 // number of points to take
     
     // Record start time
@@ -71,20 +75,29 @@ int main ( int argc, char *argv[] ) {
     // iterate over partitions on processors
     for (unsigned int i = procid*partition; i<= partition * (procid + 1); i++){
         params["beta"] = (double) i/N;
-        params["gamma"] = 0.1;
-        sim._do(params);   
+        params["gamma"] = 0.3;
+        sim._do(params);
+        res = sim.get_results();				  // extract simulation results
+        _res.push_back(res);
     }
     ierr = MPI_Finalize();
     
-    // // Record end time
+    // Record end time
     auto finish = std::chrono::high_resolution_clock::now();
     
-    // // compute elapsed time
+    // compute elapsed time
     std::chrono::duration<double> elapsed = finish - start;
     
-    // // print to console
-    std::cout << "Elapsed time: " << elapsed.count() << " s\n";
-    std::cout << "Average time per run: " << (double) elapsed.count() /N << " s\n";
+    if(procid == 0){
+        // print to console
+        std::cout << "Elapsed time: " << elapsed.count() << " s\n";
+        std::cout << "Average time per run: " << 2 * (double) elapsed.count() /N << " s\n";
+    }
+    
+    // extract results
+    for(int i = 0; i != _res.size(); ++i){
+        std::cout << _res[i]["beta"] << " " << _res[i]["R"] << "\n";
+    }
     
     return 0;
 }
