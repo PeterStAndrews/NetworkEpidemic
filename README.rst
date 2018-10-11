@@ -32,4 +32,4 @@ Author & License
 
 The MIT License (MIT). Please see `License File
 <https://github.com/PeterStAndrews/NetworkEpidemic/blob/master/LICENSE>`_.
- for more information.
+
