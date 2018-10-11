@@ -27,5 +27,9 @@ Implementing your own model
 
 
 
+Author & License
+-----------------------
 
+The MIT License (MIT). Please see `License File for more information.
+<https://github.com/PeterStAndrews/NetworkEpidemic/blob/master/LICENSE>`_.
 
