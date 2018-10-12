@@ -25,7 +25,7 @@
 
 #include "../src/graph.hpp"
 
-SCENARIO( "Let us create a network", "[epidemic]") {
+SCENARIO( "Let us create a network", "[graph]") {
 
 	GIVEN( "A data.txt file containing network data ..." ){
 
